@@ -1,0 +1,82 @@
+﻿<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <title>🧠 Cache Dashboard</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f5f6fa;
+      text-align: center;
+      margin-top: 50px;
+    }
+    h1 {
+      color: #2c3e50;
+    }
+    .card {
+      display: inline-block;
+      background: #fff;
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      text-align: left;
+      min-width: 400px;
+    }
+    pre {
+      background: #eef1ff;
+      padding: 10px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #status {
+      margin-top: 10px;
+      color: #27ae60;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Cache Dashboard</h1>
+
+  <div class="card">
+    <h3>Redis Cache Info</h3>
+    <pre id="info">Henter data...</pre>
+    <p id="timestamp"></p>
+    <button onclick="loadData()">🔄 Opdater nu</button>
+    <button onclick="clearCache()" style="background-color:#e74c3c;">🧹 Ryd Cache</button>
+    <p id="status"></p>
+  </div>
+
+  <script>
+    async function loadData() {
+      const res = await fetch("/dashboard/stats");
+      const text = await res.text();
+      document.getElementById("info").textContent = text;
+      const now = new Date().toLocaleTimeString("da-DK");
+      document.getElementById("timestamp").innerText = "Sidst opdateret: " + now;
+    }
+
+    async function clearCache() {
+      const res = await fetch("/dashboard/clear", { method: "POST" });
+      const data = await res.json();
+      document.getElementById("status").innerText = data.message || "Fejl under rydning!";
+      document.getElementById("info").textContent = "{}";
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

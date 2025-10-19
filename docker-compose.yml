@@ -1,0 +1,86 @@
+services:
+  article-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: articles
+    volumes:
+      - ./init-articles.sql:/docker-entrypoint-initdb.d/init-articles.sql:ro
+    ports:
+      - "5433:5432"
+    networks:
+      - backend
+
+  comment-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: comments
+    volumes:
+      - ./init-comments.sql:/docker-entrypoint-initdb.d/init-comments.sql:ro
+    ports:
+      - "5434:5432"
+    networks:
+      - backend
+
+  redis-article:
+    image: redis:7
+    ports:
+      - "6381:6379"
+    networks:
+      - backend
+
+  redis-comment:
+    image: redis:7
+    ports:
+      - "6382:6379"
+    networks:
+      - backend
+
+  article-service:
+    build: ./ArticleService
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=article-db;Port=5432;Database=articles;Username=postgres;Password=postgres
+      Redis__Host: redis-article
+      ASPNETCORE_ENVIRONMENT: Production
+    ports:
+      - "8081:8080"
+    depends_on:
+      - article-db
+      - redis-article
+      - comment-service
+    networks:
+      - backend
+
+  comment-service:
+    build: ./CommentService
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Db: Host=comment-db;Port=5432;Database=comments;Username=postgres;Password=postgres
+      Redis__Host: redis-comment
+      ASPNETCORE_ENVIRONMENT: Production
+    ports:
+      - "8082:8080"
+    depends_on:
+      - comment-db
+      - redis-comment
+    networks:
+      - backend
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5540:5540"
+    depends_on:
+      - redis-article
+      - redis-comment
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
